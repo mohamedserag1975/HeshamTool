@@ -12,7 +12,7 @@ import datetime as datetime
 #from streamlit_option_menu import option_menu
 #from scipy import stats
 #import xlrd as xlrd
-import openpyxl
+import openpyxl as openpyxl
 
 st.set_page_config(page_title="", page_icon="",
                    initial_sidebar_state="expanded", menu_items={"About": "Rev 0 - M.Serag"}, layout="wide")
