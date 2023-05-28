@@ -9,7 +9,7 @@ import pandas as pd
 import warnings
 from PIL import Image
 import datetime as datetime
-from streamlit_option_menu import option_menu
+#from streamlit_option_menu import option_menu
 from scipy import stats
 import xlrd as xlrd
 
