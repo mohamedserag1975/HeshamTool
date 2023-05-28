@@ -3,15 +3,16 @@ import pandas as pd
 import my_functions
 import time
 import streamlit as st
-import plotly.graph_objs as go
+#import plotly.graph_objs as go
 import pandas as pd
-import plotly.express as px
+#import plotly.express as px
 import warnings
 from PIL import Image
 import datetime as datetime
-from streamlit_option_menu import option_menu
-from scipy import stats
+#from streamlit_option_menu import option_menu
+#from scipy import stats
 import xlrd as xlrd
+# import openpyxl as openpyxl
 
 st.set_page_config(page_title="", page_icon="",
                    initial_sidebar_state="expanded", menu_items={"About": "Rev 0 - M.Serag"}, layout="wide")
