@@ -10,7 +10,7 @@ import warnings
 from PIL import Image
 import datetime as datetime
 #from streamlit_option_menu import option_menu
-from scipy import stats
+#from scipy import stats
 import xlrd as xlrd
 
 st.set_page_config(page_title="", page_icon="",
