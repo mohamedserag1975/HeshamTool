@@ -3,7 +3,7 @@ import pandas as pd
 import my_functions
 import time
 import streamlit as st
-import plotly.graph_objs as go
+#import plotly.graph_objs as go
 import pandas as pd
 #import plotly.express as px
 import warnings
