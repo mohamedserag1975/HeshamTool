@@ -135,7 +135,7 @@ if menumain == "Document":
     df1 = df1.merge(doc_3_rev_filter.to_frame(),
                                     left_on=doc_name,
                                     right_index=True)
-    doc_3_rev = df1[df1.rev_counts > 3][[doc_name, "rev_counts"]].drop_duplicates()
+    doc_3_rev = df1[df1.rev_counts > 3][[doc_name, "rev_counts"]].drop_duplicates().sort_values(by="rev_counts", ascending=False)
     doc_3_rev_total = df1[df1.rev_counts > 3][doc_name].nunique()
     doc_per_disc = df1.drop_duplicates(subset=doc_name, keep="first")
     doc_per_disc = doc_per_disc["LOD:DC*"].value_counts()
