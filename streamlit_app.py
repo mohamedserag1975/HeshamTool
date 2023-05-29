@@ -1,3 +1,4 @@
+import dynamic as dynamic
 import streamlit as st
 import pandas as pd
 import my_functions
@@ -42,7 +43,7 @@ if menumain == "Time & Cost":
     timecheckbox = st.checkbox("Show detailed analysis")
     if not timecheckbox:
 
-        exchangeratePKR = st.number_input("USD to PKR, 1 USD = xxx PKR",value=285.08)
+        exchangeratePKR = st.number_input("1 USD = xxx PKR",value=285.08)
         exchangerateAED = 3.765
         col100, col200, col300 = st.columns(3, gap="large")
         with col100:
@@ -156,8 +157,23 @@ if menumain == "Document":
     with col2:
         st.subheader("Document Revision count")
         st.write(doc_3_rev)
+    # st.experimental_data_editor(df1, num_rows='dynamic')
     # st.write(df1)
 
 #Invoices data
+lst_pie_names = ["invoiced", "to_invoice"]
+lst_pie_values = [total_invoiced, total_to_invoice-total_invoiced]
+if menumain == "Invoices":
+    col1, col2 = st.columns(2, gap='small')
+    with col1:
+        labels = {True: 'Transfered', False: 'Pending'}
+        df2['Transferred'] = df2['Transferred'].map(labels)
+        invoices_pie = px.pie(data_frame=df2, values="Amount, Currency", names="Transferred", hole=0.5,
+                              color_discrete_sequence = ['#2C3E50','#CACFD2'])
+        invoices_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=0))
+        invoices_pie.update_traces(textinfo='percent+value', title_text="Invoices Submitted", title_font_size= 17)
+        st.plotly_chart(invoices_pie)
+    with col2:
+        st.write()
 
 
