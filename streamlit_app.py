@@ -193,6 +193,8 @@ if menumain == "Document":
         fig.update_yaxes()
         st.plotly_chart(fig, use_container_width=True)
 
+
+
     # st.write(df1)
 
 #Invoices data
@@ -209,6 +211,20 @@ if menumain == "Invoices":
         invoices_pie.update_traces(textinfo='percent+value', title_text="Invoices Submitted", title_font_size= 17)
         st.plotly_chart(invoices_pie)
     with col2:
-        st.write()
+
+        invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().cumsum().reset_index()
+        invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
+        # st.write(invoice_cum1)
+        # st.write(invoice_cum)
+        fig = px.line(invoice_cum, x="Planned Date", y='Amount, Invoice Currency', color="Transferred",
+                      color_discrete_sequence = [' #002ebf ','#CACFD2'])
+        fig.update_traces(mode='markers+lines+text')
+        fig.update_layout(yaxis=dict(title='Invoiced ($)', titlefont_size=16, tickfont_size=14),
+                          xaxis=dict(title='Planned Date', titlefont_size=16, tickfont_size=14))
+        fig.add_bar(alignmentgroup="Planned Date",x=invoice_cum1["Planned Date"],
+                    y=invoice_cum1["Amount, Invoice Currency"], name="Invoices")
+        fig.update_layout(legend_title_text=None, legend=dict(orientation="v", yanchor="top", y=0.9, xanchor="center", x=0.9))
+        st.plotly_chart(fig)
+
 
 
