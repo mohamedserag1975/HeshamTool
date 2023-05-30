@@ -200,6 +200,8 @@ if menumain == "Document":
 #Invoices data
 lst_pie_names = ["invoiced", "to_invoice"]
 lst_pie_values = [total_invoiced, total_to_invoice-total_invoiced]
+invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().cumsum().reset_index()
+invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
 if menumain == "Invoices":
     col1, col2 = st.columns(2, gap='small')
     with col1:
@@ -210,12 +212,10 @@ if menumain == "Invoices":
         invoices_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=0))
         invoices_pie.update_traces(textinfo='percent+value', title_text="Invoices Submitted", title_font_size= 17)
         st.plotly_chart(invoices_pie)
+        st.write(invoice_cum1)
+
     with col2:
 
-        invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().cumsum().reset_index()
-        invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
-        # st.write(invoice_cum1)
-        # st.write(invoice_cum)
         fig = px.line(invoice_cum, x="Planned Date", y='Amount, Invoice Currency', color="Transferred",
                       color_discrete_sequence = [' #002ebf ','#CACFD2'])
         fig.update_traces(mode='markers+lines+text')
