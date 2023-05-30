@@ -37,6 +37,7 @@ total_to_invoice = df2["Amount, Currency"].sum()
 total_invoiced = df2[df2["Transferred"] == True]["Amount, Currency"].sum()
 
 menumain = option_menu("", ["Time & Cost", 'Document', "Invoices"], default_index=0, orientation="horizontal")
+exchangerateAED = 3.765
 
 if menumain == "Time & Cost":
     timecheckbox = st.checkbox("Show detailed analysis")
@@ -124,39 +125,72 @@ if menumain == "Time & Cost":
 
     # Document analysis
 if menumain == "Document":
-
-    doc_name = "LOD:DocNo-DocTitle"
+    df1 = df1.rename(columns={'LOD:DocNo-DocTitle': 'doc_title'})
+    doc_name = "doc_title"
     total_docs_count = df1[doc_name].nunique()
     total_disc = df1["LOD:DC*"].nunique()
 
     total_docs_submitted = df1[(df1["W-Status"] == "Completed/ Submitted") & (df1["Rev"] == "C1")][doc_name].nunique()
     total_docs_approved = df1[(df1["Doc-Status"] == "IFU")&(df1["W-Status"] == "Completed/ Submitted")][doc_name].nunique()
     doc_3_rev_filter = df1[doc_name].value_counts().rename('rev_counts')
-    df1 = df1.merge(doc_3_rev_filter.to_frame(),
-                                    left_on=doc_name,
-                                    right_index=True)
+    df1 = df1.merge(doc_3_rev_filter.to_frame(), left_on=doc_name, right_index=True)
     doc_3_rev = df1[df1.rev_counts > 3][[doc_name, "rev_counts"]].drop_duplicates().sort_values(by="rev_counts", ascending=False)
     doc_3_rev_total = df1[df1.rev_counts > 3][doc_name].nunique()
     doc_per_disc = df1.drop_duplicates(subset=doc_name, keep="first")
-    doc_per_disc = doc_per_disc["LOD:DC*"].value_counts()
+    doc_per_disc_count = doc_per_disc["LOD:DC*"].value_counts()
     total_docs_rejected = df1[(df1["Review Code"] == "E")][doc_name].nunique()
 
+    docs_submitted_disc = doc_per_disc[(doc_per_disc["W-Status"] == "Completed/ Submitted")
+                                       & (df1["Rev"] == "C1")]["LOD:DC*"].value_counts()
+    doc_per_disc_count=doc_per_disc_count.reset_index()
 
-    st.write("Total Documents count", total_docs_count)
-    st.write("Total No of discipline", total_disc)
-    st.write("Total documents submitted", total_docs_submitted, "--> ",
-             (round((total_docs_submitted/total_docs_count)*100,1)), "%")
-    st.write("Total Approved documents", total_docs_approved)
-    st.write("Total Documents with more than 3 revisions",doc_3_rev_total)
-    st.write("rejected",total_docs_rejected)
+    df_doc_submittal = doc_per_disc_count.merge(docs_submitted_disc.to_frame(), left_on="LOD:DC*", right_index=True)
+
+    # st.write(docs_submitted_disc)
+    # st.write(doc_per_disc)
+    col100, col200, col300 = st.columns(3, gap="large")
+    with col100:
+        st.metric(label="Total Project Documents", value=total_docs_count)
+        st.metric(label="Documents with > 3 revisions", value=doc_3_rev_total)
+    with col200:
+        st.metric(label = f"{total_docs_submitted} Documents Submitted",
+                  value=str(round((total_docs_submitted/total_docs_count)*100,1))+ " %")
+        st.metric(label="Total Rejected Revisions", value=total_docs_rejected)
+
+
+    with col300:
+        st.metric(label="Total Approved Documents", value=total_docs_approved)
+
+    my_functions.style_metric_cards(border_left_color="red", background_color="lightgrey", border_size_px=0.5,
+                                    border_color="red")
+
     col1, col2 = st.columns(2, gap="small")
     with col1:
-        st.subheader("Documents per discipline")
-        st.write(doc_per_disc)
-    with col2:
+
         st.subheader("Document Revision count")
-        st.write(doc_3_rev)
-    # st.experimental_data_editor(df1, num_rows='dynamic')
+        st.dataframe(doc_3_rev, width=800)
+
+    with col2:
+        st.subheader("Documents per discipline & Submittal")
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=df_doc_submittal["LOD:DC*"],
+                             y=df_doc_submittal["count_x"],
+                             name="Total Docs", text=df_doc_submittal["count_x"], textangle=0, textposition="inside"))
+        fig.update_traces(marker_color='red', marker_line_color='rgb(8,48,107)',
+                          marker_line_width=1.5, opacity=0.6)
+        fig.add_trace(go.Bar(x=df_doc_submittal["LOD:DC*"],
+                             y=df_doc_submittal["count_y"],
+                             name="Submitted", text=df_doc_submittal["count_y"], textangle=0, textposition="inside"))
+
+        fig.update_layout(title=dict(text="Document status - submittal", font=dict(size=20),
+                                     automargin=True, yref='paper'))
+        fig.update_layout(
+            title={'y': 1, 'x': 0.5, 'xanchor': 'center', 'yanchor': 'top'}, barmode='overlay')
+        fig.update_layout(uniformtext_minsize=15, uniformtext_mode='show')
+
+        fig.update_yaxes()
+        st.plotly_chart(fig, use_container_width=True)
+
     # st.write(df1)
 
 #Invoices data
