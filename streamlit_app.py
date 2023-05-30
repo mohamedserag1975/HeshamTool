@@ -198,15 +198,17 @@ if menumain == "Document":
     # st.write(df1)
 
 #Invoices data
+labels = {True: 'Transfered', False: 'Pending'}
+df2['Transferred'] = df2['Transferred'].map(labels)
 lst_pie_names = ["invoiced", "to_invoice"]
 lst_pie_values = [total_invoiced, total_to_invoice-total_invoiced]
 invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().cumsum().reset_index()
 invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
+
 if menumain == "Invoices":
     col1, col2 = st.columns(2, gap='small')
     with col1:
-        labels = {True: 'Transfered', False: 'Pending'}
-        df2['Transferred'] = df2['Transferred'].map(labels)
+
         invoices_pie = px.pie(data_frame=df2, values="Amount, Currency", names="Transferred", hole=0.5,
                               color_discrete_sequence = ['#2C3E50','#CACFD2'])
         invoices_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=0))
@@ -217,12 +219,12 @@ if menumain == "Invoices":
     with col2:
 
         fig = px.line(invoice_cum, x="Planned Date", y='Amount, Invoice Currency', color="Transferred",
-                      color_discrete_sequence = [' #002ebf ','#CACFD2'])
+                      color_discrete_sequence = ['#00c100','#CACFD2'])
         fig.update_traces(mode='markers+lines+text')
         fig.update_layout(yaxis=dict(title='Invoiced ($)', titlefont_size=16, tickfont_size=14),
                           xaxis=dict(title='Planned Date', titlefont_size=16, tickfont_size=14))
         fig.add_bar(alignmentgroup="Planned Date",x=invoice_cum1["Planned Date"],
-                    y=invoice_cum1["Amount, Invoice Currency"], name="Invoices")
+                    y=invoice_cum1["Amount, Invoice Currency"], name="Invoices",opacity=0.75)
         fig.update_layout(legend_title_text=None, legend=dict(orientation="v", yanchor="top", y=0.9, xanchor="center", x=0.9))
         st.plotly_chart(fig)
 
