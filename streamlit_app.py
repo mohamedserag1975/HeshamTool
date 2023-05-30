@@ -175,7 +175,7 @@ if menumain == "Document":
         fig = go.Figure()
         fig.add_trace(go.Bar(x=df_doc_submittal["LOD:DC*"],
                              y=df_doc_submittal["count_x"],
-                             name="Total Docs", text=df_doc_submittal["count_x"], textangle=0, textposition="inside"))
+                             name="Total Docs", text=df_doc_submittal["count_x"], textangle=0, textposition="outside"))
         fig.update_traces(marker_color='red', marker_line_color='rgb(8,48,107)',
                           marker_line_width=1.5, opacity=0.6)
         fig.add_trace(go.Bar(x=df_doc_submittal["LOD:DC*"],
@@ -187,6 +187,8 @@ if menumain == "Document":
         fig.update_layout(
             title={'y': 1, 'x': 0.5, 'xanchor': 'center', 'yanchor': 'top'}, barmode='overlay')
         fig.update_layout(uniformtext_minsize=15, uniformtext_mode='show')
+        fig.update_layout(yaxis=dict(title='Document Count', titlefont_size=16, tickfont_size=14),
+                          xaxis=dict(title='Discipline', titlefont_size=16, tickfont_size=14))
 
         fig.update_yaxes()
         st.plotly_chart(fig, use_container_width=True)
