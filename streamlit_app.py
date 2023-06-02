@@ -5,7 +5,6 @@ import time
 import streamlit as st
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import matplotlib as plt
 import pandas as pd
 import plotly.express as px
 import warnings
