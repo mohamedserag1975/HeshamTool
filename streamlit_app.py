@@ -43,8 +43,8 @@ total_invoiced = df2[df2["Transferred"] == True]["Amount, Currency"].sum()
 
 time_cum = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().cumsum().reset_index()
 time_cum1 = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().reset_index()
-st.write(time_cum)
-st.write(time_cum1)
+# st.write(time_cum)
+# st.write(time_cum1)
 # st.write(df)
 menumain = option_menu("", ["Time & Cost", 'Document', "Invoices"], default_index=0, orientation="horizontal")
 exchangerateAED = 3.765
@@ -95,6 +95,15 @@ if menumain == "Time & Cost":
                 fig.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=1),
                                   legend_title_text=None)
                 st.plotly_chart(fig)
+
+            time_pie = px.pie(data_frame=df, values="Quantity Reg.", names="Discipline", hole=0.5,)
+                                  # color_discrete_sequence=['#2C3E50', '#CACFD2'])
+            time_pie.update_traces(textinfo='percent+value+label', title_text="Time Vouchered",
+                                   title_font_size=17, textposition='inside')
+            time_pie.update_layout(uniformtext_minsize=17, uniformtext_mode='hide')
+            time_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=1))
+
+            st.plotly_chart(time_pie)
 ############
         with col500:
             st.write("  ")
@@ -127,14 +136,7 @@ if menumain == "Time & Cost":
 
             st.plotly_chart(fig)
 
-            time_pie = px.pie(data_frame=df, values="Quantity Reg.", names="Discipline", hole=0.5,)
-                                  # color_discrete_sequence=['#2C3E50', '#CACFD2'])
-            time_pie.update_traces(textinfo='percent+value+label', title_text="Time Vouchered",
-                                   title_font_size=17, textposition='inside')
-            time_pie.update_layout(uniformtext_minsize=18, uniformtext_mode='hide')
-            time_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=1))
 
-            st.plotly_chart(time_pie)
 
     else:
         lst_projectno = my_functions.unique(df, "Project No.")
