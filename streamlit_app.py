@@ -4,6 +4,8 @@ import my_functions
 import time
 import streamlit as st
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+import matplotlib as plt
 import pandas as pd
 import plotly.express as px
 import warnings
@@ -25,10 +27,14 @@ df1.dropna(how='all', axis=1, inplace=True)
 df2 = my_functions.get_data_from_excel("Invoicing.xls")
 df2.dropna(how='all', axis=1, inplace=True)
 
-df = df[(df["Project No."] == "15195-002") | (df["Project No."] == "15195-008")]
+
+# df = df[(df["Project No."] == "15195-002") | (df["Project No."] == "15195-008")]
 df[['Discipline', 'Phase' ]] = df['Task'].str.split('-', expand=True)
+df['Discipline'] = df['Discipline'].str.rstrip()
 df = df.fillna("NA")
-# df['discipline_Name'] =
+
+df['Date'] = pd.to_datetime(df['Date']).dt.date
+today_in_sheet = df['Date'].max()
 totalhoursAD = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-002")])["Quantity Reg."].sum()
 totalcostAD = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-002")])["Cost, Reg."].sum()
 totalhoursPAK = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-008")])["Quantity Reg."].sum()
@@ -36,6 +42,11 @@ totalCostPAK = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."
 total_to_invoice = df2["Amount, Currency"].sum()
 total_invoiced = df2[df2["Transferred"] == True]["Amount, Currency"].sum()
 
+time_cum = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().cumsum().reset_index()
+time_cum1 = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().reset_index()
+st.write(time_cum)
+st.write(time_cum1)
+# st.write(df)
 menumain = option_menu("", ["Time & Cost", 'Document', "Invoices"], default_index=0, orientation="horizontal")
 exchangerateAED = 3.765
 
@@ -68,6 +79,63 @@ if menumain == "Time & Cost":
 
         my_functions.style_metric_cards(border_left_color="black", background_color="lightgrey", border_size_px=0,
                                         border_color="lightgrey")
+
+        col400, col500 = st.columns(2, gap="large")
+        with col400:
+            select_hours_radio = st.radio("**Select View**", ["Monthly", "Daily"], horizontal=True)
+            if select_hours_radio == "Monthly":
+                fig = px.histogram(df, x='Date', y='Quantity Reg.', color="Project No.", barmode='stack', text_auto="",
+                                   title="Monthly hours spend")
+                fig.update_traces(xbins_size="M1")
+                fig.update_layout(bargap=0.1)
+                fig.update_xaxes(dtick="M1", tickformat="%b\n%Y")
+                st.plotly_chart(fig)
+            else:
+                fig = px.bar(df, x=df["Date"], y=df["Quantity Reg."], color="Discipline", barmode="stack",
+                             title="Daily hours spend")
+                fig.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=1),
+                                  legend_title_text=None)
+                st.plotly_chart(fig)
+############
+        with col500:
+            st.write("  ")
+            st.write("  ")
+            st.write("  ")
+            st.write("  ")
+            fig = make_subplots(specs=[[{"secondary_y": True}]],)
+            # Add traces
+            fig.add_trace(
+                go.Scatter(x=time_cum["Date"], y=time_cum['Quantity Reg.'], name="Cumulative project hours", ),
+                secondary_y=False, )
+
+            fig.add_trace(
+                go.Histogram(x=df["Date"], y=df["Quantity Reg."], name="Daily Hours spent", ), secondary_y=True, )
+
+            fig.update_traces(marker_color='blue', marker_line_color='red',
+                              marker_line_width=1, opacity=0.5)
+            # Add figure title
+            fig.update_layout(title_text=f"Total Project Hours till {today_in_sheet} is {df['Quantity Reg.'].sum()}")
+
+            # Set x-axis title
+            fig.update_xaxes(title_text="Date")
+
+            # Set y-axes titles
+            fig.update_yaxes(title_text="<b>primary</b> Cumulative hours", secondary_y=False)
+            fig.update_yaxes(title_text="<b>secondary</b> Daily Hours", secondary_y=True)
+
+            fig.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=0.2),
+                              legend_title_text=None)
+
+            st.plotly_chart(fig)
+
+            time_pie = px.pie(data_frame=df, values="Quantity Reg.", names="Discipline", hole=0.5,)
+                                  # color_discrete_sequence=['#2C3E50', '#CACFD2'])
+            time_pie.update_traces(textinfo='percent+value+label', title_text="Time Vouchered",
+                                   title_font_size=17, textposition='inside')
+            time_pie.update_layout(uniformtext_minsize=18, uniformtext_mode='hide')
+            time_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=1))
+
+            st.plotly_chart(time_pie)
 
     else:
         lst_projectno = my_functions.unique(df, "Project No.")
