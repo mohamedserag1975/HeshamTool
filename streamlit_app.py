@@ -95,8 +95,12 @@ if menumain == "Time & Cost":
                 fig.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=1),
                                   legend_title_text=None)
                 st.plotly_chart(fig)
-
-            time_pie = px.pie(data_frame=df, values="Quantity Reg.", names="Discipline", hole=0.5,)
+            pie_radio = st.radio("**Select View**", ["Discipline", "Office"], horizontal=True)
+            if pie_radio == "Discipline":
+                names_pie = "Discipline"
+            else:
+                names_pie = "Project No."
+            time_pie = px.pie(data_frame=df, values="Quantity Reg.", names=names_pie, hole=0.5,)
                                   # color_discrete_sequence=['#2C3E50', '#CACFD2'])
             time_pie.update_traces(textinfo='percent+value+label', title_text="Time Vouchered",
                                    title_font_size=17, textposition='inside')
