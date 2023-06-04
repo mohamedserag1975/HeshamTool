@@ -46,15 +46,20 @@ time_cum1 = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']]
 # st.write(time_cum)
 # st.write(time_cum1)
 # st.write(df)
-menumain = option_menu("", ["Time & Cost", 'Document', "Invoices"], default_index=0, orientation="horizontal")
 exchangerateAED = 3.765
+
+lst_projectno = my_functions.unique(df, "Project No.")
+lst_phase = my_functions.unique(df, 'Phase')
+lst_discipline = my_functions.unique(df, 'Discipline')
+lst_transaction = my_functions.unique(df, "Transaction Type")
+
+menumain = option_menu("", ["Time & Cost", 'Document', "Invoices"], default_index=0, orientation="horizontal")
 
 if menumain == "Time & Cost":
     timecheckbox = st.checkbox("Show detailed analysis")
     if not timecheckbox:
+        exchangeratePKR = st.number_input("1 USD = xxx PKR", value=285.08)
 
-        exchangeratePKR = st.number_input("1 USD = xxx PKR",value=285.08)
-        exchangerateAED = 3.765
         col100, col200, col300 = st.columns(3, gap="large")
         with col100:
             st.header("Project Hours")
@@ -140,36 +145,18 @@ if menumain == "Time & Cost":
 
             st.plotly_chart(fig)
 
-
-
     else:
-        lst_projectno = my_functions.unique(df, "Project No.")
-        lst_phase = my_functions.unique(df, 'Phase')
-        lst_discipline = my_functions.unique(df, 'Discipline')
-        lst_transaction = my_functions.unique(df, "Transaction Type")
 
         project = st.sidebar.selectbox("Project Office", lst_projectno)
         phase = st.sidebar.selectbox("Phase", lst_phase)
         discipline = st.sidebar.selectbox("Discipline", lst_discipline)
         transaction = st.sidebar.selectbox("Transaction Type", lst_transaction)
-        # EBS4 = st.sidebar.selectbox(EBS_LEVEL4, lst_EBS4)
-        # EBS5 = st.sidebar.selectbox(EBS_LEVEL5, lst_EBS5)
-        # FAILURE = st.sidebar.selectbox(FAILURE_MODE, lst_FAILURE, key="fail")
-        # PLANT_select = st.sidebar.selectbox(PLANT_NAME, lst_plant)
-        # EQUIPMENT = st.sidebar.selectbox(EQUIPMENT_NAME, lst_equip_name)
-        # CODE = st.sidebar.selectbox(EVENT_CODE, lst_eventcode)
-        #
+
         mskproject = df["Project No."] != project if project == "All" else df["Project No."] == project
         mskdiscipline = df["Discipline"] != discipline if discipline == "All" else df["Discipline"] == discipline
         mskphase = df["Phase"] != phase if phase == "All" else df["Phase"] == phase
         msktransaction = df["Transaction Type"] != transaction if transaction == "All" else df["Transaction Type"] == transaction
-        # msk4 = df[EBS_LEVEL4] != EBS4 if EBS4 == "All" else df[EBS_LEVEL4] == EBS4
-        # msk5 = df[EBS_LEVEL5] != EBS5 if EBS5 == "All" else df[EBS_LEVEL5] == EBS5
-        # mskfail = df[FAILURE_MODE] != FAILURE if FAILURE == "All" else df[FAILURE_MODE] == FAILURE
-        # mskequip = df[EQUIPMENT_NAME] != EQUIPMENT if EQUIPMENT == "All" else df[EQUIPMENT_NAME] == EQUIPMENT
-        # mskcode = df[EVENT_CODE] != CODE if CODE == "All" else df[EVENT_CODE] == CODE
-        # mskplant = df[PLANT_NAME] != PLANT_select if PLANT_select == "All" else df[PLANT_NAME] == PLANT_select
-        #
+
         df_filtered = (df[mskproject& mskdiscipline&mskphase&msktransaction])[["Project No.","Cost, Reg.", "Phase", "Discipline",
                                                                                "Transaction Type", "Quantity Reg."]]
 
@@ -197,34 +184,35 @@ if menumain == "Time & Cost":
         st.dataframe(df_filtered, width = 3 *800)
 
     # Document analysis
+df1 = df1.rename(columns={'LOD:DocNo-DocTitle': 'doc_title'})
+doc_name = "doc_title"
+total_docs_count = df1[doc_name].nunique()
+total_disc = df1["LOD:DC*"].nunique()
+
+total_docs_submitted = df1[(df1["W-Status"] == "Completed/ Submitted") & (df1["Rev"] == "C1")][doc_name].nunique()
+total_docs_approved = df1[(df1["Doc-Status"] == "IFU")&(df1["W-Status"] == "Completed/ Submitted")][doc_name].nunique()
+doc_3_rev_filter = df1[doc_name].value_counts().rename('rev_counts')
+df1 = df1.merge(doc_3_rev_filter.to_frame(), left_on=doc_name, right_index=True)
+doc_3_rev = df1[df1.rev_counts > 3][[doc_name, "rev_counts"]].drop_duplicates().sort_values(by="rev_counts", ascending=False)
+doc_3_rev_total = df1[df1.rev_counts > 3][doc_name].nunique()
+doc_per_disc = df1.drop_duplicates(subset=doc_name, keep="first")
+doc_per_disc_count = doc_per_disc["LOD:DC*"].value_counts()
+total_docs_rejected = df1[(df1["Review Code"] == "E")][doc_name].nunique()
+
+docs_submitted_disc = doc_per_disc[(doc_per_disc["W-Status"] == "Completed/ Submitted")
+                                   & (df1["Rev"] == "C1")]["LOD:DC*"].value_counts()
+doc_per_disc_count=doc_per_disc_count.reset_index()
+
+df_doc_submittal = doc_per_disc_count.merge(docs_submitted_disc.to_frame(), left_on="LOD:DC*", right_index=True)
+
 if menumain == "Document":
-    df1 = df1.rename(columns={'LOD:DocNo-DocTitle': 'doc_title'})
-    doc_name = "doc_title"
-    total_docs_count = df1[doc_name].nunique()
-    total_disc = df1["LOD:DC*"].nunique()
-
-    total_docs_submitted = df1[(df1["W-Status"] == "Completed/ Submitted") & (df1["Rev"] == "C1")][doc_name].nunique()
-    total_docs_approved = df1[(df1["Doc-Status"] == "IFU")&(df1["W-Status"] == "Completed/ Submitted")][doc_name].nunique()
-    doc_3_rev_filter = df1[doc_name].value_counts().rename('rev_counts')
-    df1 = df1.merge(doc_3_rev_filter.to_frame(), left_on=doc_name, right_index=True)
-    doc_3_rev = df1[df1.rev_counts > 3][[doc_name, "rev_counts"]].drop_duplicates().sort_values(by="rev_counts", ascending=False)
-    doc_3_rev_total = df1[df1.rev_counts > 3][doc_name].nunique()
-    doc_per_disc = df1.drop_duplicates(subset=doc_name, keep="first")
-    doc_per_disc_count = doc_per_disc["LOD:DC*"].value_counts()
-    total_docs_rejected = df1[(df1["Review Code"] == "E")][doc_name].nunique()
-
-    docs_submitted_disc = doc_per_disc[(doc_per_disc["W-Status"] == "Completed/ Submitted")
-                                       & (df1["Rev"] == "C1")]["LOD:DC*"].value_counts()
-    doc_per_disc_count=doc_per_disc_count.reset_index()
-
-    df_doc_submittal = doc_per_disc_count.merge(docs_submitted_disc.to_frame(), left_on="LOD:DC*", right_index=True)
 
     # st.write(docs_submitted_disc)
     # st.write(doc_per_disc)
     col100, col200, col300 = st.columns(3, gap="large")
     with col100:
         st.metric(label="Total Project Documents", value=total_docs_count)
-        st.metric(label="Documents with > 3 revisions", value=doc_3_rev_total)
+        st.metric(label="Documents Submitted with > 3 revisions", value=doc_3_rev_total)
     with col200:
         st.metric(label = f"{total_docs_submitted} Documents Submitted",
                   value=str(round((total_docs_submitted/total_docs_count)*100,1))+ " %")
@@ -277,7 +265,8 @@ lst_pie_names = ["invoiced", "to_invoice"]
 lst_pie_values = [total_invoiced, total_to_invoice-total_invoiced]
 invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().cumsum().reset_index()
 invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
-
+# invoice_cum1['Planned Date'] = pd.to_datetime(invoice_cum1['Planned Date'])
+invoice_cum1["Planned Date"] = invoice_cum1["Planned Date"].dt.date
 if menumain == "Invoices":
     col1, col2 = st.columns(2, gap='small')
     with col1:
