@@ -216,11 +216,11 @@ if menumain == "Document":
     with col200:
         st.metric(label = f"{total_docs_submitted} Documents Submitted",
                   value=str(round((total_docs_submitted/total_docs_count)*100,1))+ " %")
-        st.metric(label="Total Rejected Revisions", value=total_docs_rejected)
-
+        st.metric(label="Hours per Document submitted", value=(round((totalhoursAD[3]+totalhoursPAK[3])/total_docs_submitted,1)))
 
     with col300:
         st.metric(label="Total Approved Documents", value=total_docs_approved)
+        st.metric(label="Total Rejected Revisions", value=total_docs_rejected)
 
     my_functions.style_metric_cards(border_left_color="red", background_color="lightgrey", border_size_px=0.5,
                                     border_color="red")
