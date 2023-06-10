@@ -10,6 +10,7 @@ import plotly.express as px
 import warnings
 from PIL import Image
 import datetime as datetime
+from datetime import date
 from streamlit_option_menu import option_menu
 from scipy import stats
 import xlrd as xlrd
@@ -188,7 +189,6 @@ df1 = df1.rename(columns={'LOD:DocNo-DocTitle': 'doc_title'})
 doc_name = "doc_title"
 total_docs_count = df1[doc_name].nunique()
 total_disc = df1["LOD:DC*"].nunique()
-
 total_docs_submitted = df1[(df1["W-Status"] == "Completed/ Submitted") & (df1["Rev"] == "C1")][doc_name].nunique()
 total_docs_approved = df1[(df1["Doc-Status"] == "IFU")&(df1["W-Status"] == "Completed/ Submitted")][doc_name].nunique()
 doc_3_rev_filter = df1[doc_name].value_counts().rename('rev_counts')
@@ -198,11 +198,9 @@ doc_3_rev_total = df1[df1.rev_counts > 3][doc_name].nunique()
 doc_per_disc = df1.drop_duplicates(subset=doc_name, keep="first")
 doc_per_disc_count = doc_per_disc["LOD:DC*"].value_counts()
 total_docs_rejected = df1[(df1["Review Code"] == "E")][doc_name].nunique()
-
 docs_submitted_disc = doc_per_disc[(doc_per_disc["W-Status"] == "Completed/ Submitted")
                                    & (df1["Rev"] == "C1")]["LOD:DC*"].value_counts()
 doc_per_disc_count=doc_per_disc_count.reset_index()
-
 df_doc_submittal = doc_per_disc_count.merge(docs_submitted_disc.to_frame(), left_on="LOD:DC*", right_index=True)
 
 if menumain == "Document":
@@ -242,7 +240,6 @@ if menumain == "Document":
         fig.add_trace(go.Bar(x=df_doc_submittal["LOD:DC*"],
                              y=df_doc_submittal["count_y"],
                              name="Submitted", text=df_doc_submittal["count_y"], textangle=0, textposition="inside"))
-
         fig.update_layout(title=dict(text="Document status - submittal", font=dict(size=20),
                                      automargin=True, yref='paper'))
         fig.update_layout(
@@ -250,14 +247,10 @@ if menumain == "Document":
         fig.update_layout(uniformtext_minsize=15, uniformtext_mode='show')
         fig.update_layout(yaxis=dict(title='Document Count', titlefont_size=16, tickfont_size=14),
                           xaxis=dict(title='Discipline', titlefont_size=16, tickfont_size=14))
-
         fig.update_yaxes()
         st.plotly_chart(fig, use_container_width=True)
 
-
-
     # st.write(df1)
-
 #Invoices data
 labels = {True: 'Transfered', False: 'Pending'}
 df2['Transferred'] = df2['Transferred'].map(labels)
@@ -267,6 +260,15 @@ invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Cur
 invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
 # invoice_cum1['Planned Date'] = pd.to_datetime(invoice_cum1['Planned Date'])
 invoice_cum1["Planned Date"] = invoice_cum1["Planned Date"].dt.date
+
+def highlight_pending(invoice_cum1):
+    return ['background-color: lightgreen'] * len(invoice_cum1) \
+        if invoice_cum1['Transferred'] == "Transfered" \
+        else ['background-color:  #ff5c5c'] * len(invoice_cum1)
+
+def color_pending(val):
+    color = 'lightgreen' if val == 'Transfered' else 'red'
+    return f'background-color: {color}'
 if menumain == "Invoices":
     col1, col2 = st.columns(2, gap='small')
     with col1:
@@ -276,12 +278,13 @@ if menumain == "Invoices":
         invoices_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=0))
         invoices_pie.update_traces(textinfo='percent+value', title_text="Invoices Submitted", title_font_size= 17)
         st.plotly_chart(invoices_pie)
-        st.write(invoice_cum1)
-
+        st.dataframe(round(invoice_cum1, 2).style.apply(highlight_pending, axis=1)
+                     .format({'Amount, Invoice Currency': '{:,.2f}'}))
+        # st.dataframe(invoice_cum1.style.applymap(color_pending, subset=['Transferred']))
     with col2:
 
         fig = px.line(invoice_cum, x="Planned Date", y='Amount, Invoice Currency', color="Transferred",
-                      color_discrete_sequence = ['#00c100','#CACFD2'])
+                      color_discrete_sequence = ['#00c100','#ff5c5c'])
         fig.update_traces(mode='markers+lines+text')
         fig.update_layout(yaxis=dict(title='Invoiced ($)', titlefont_size=16, tickfont_size=14),
                           xaxis=dict(title='Planned Date', titlefont_size=16, tickfont_size=14))
@@ -289,6 +292,7 @@ if menumain == "Invoices":
                     y=invoice_cum1["Amount, Invoice Currency"], name="Invoices",opacity=0.75)
         fig.update_layout(legend_title_text=None, legend=dict(orientation="v", yanchor="top", y=0.9, xanchor="center", x=0.9))
         st.plotly_chart(fig)
+
 
 
 
