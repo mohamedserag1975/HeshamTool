@@ -17,12 +17,17 @@ import xlrd as xlrd
 
 st.set_page_config(page_title="", page_icon="",
                    initial_sidebar_state="expanded", menu_items={"About": "Rev 0 - M.Serag"}, layout="wide")
+# @st.cache_data
+file = "expenses.xls"
+df = pd.read_excel(file)
+# df = my_functions.get_data_from_excel("expenses.xls")
+# df.dropna(how='all', axis=1, inplace=True)
+st.write(df.shape)
 
-df = my_functions.get_data_from_excel("expenses.xls")
-df.dropna(how='all', axis=1, inplace=True)
-
-df1 = my_functions.get_data_from_excel("doc_status.xlsx")
-df1.dropna(how='all', axis=1, inplace=True)
+# df1 = my_functions.get_data_from_excel("doc_status.xlsx")
+# df1.dropna(how='all', axis=1, inplace=True)
+file1 = "doc_status.xlsx"
+df1 = pd.read_excel(file1)
 
 df2 = my_functions.get_data_from_excel("Invoicing.xls")
 df2.dropna(how='all', axis=1, inplace=True)
@@ -32,17 +37,18 @@ df2.dropna(how='all', axis=1, inplace=True)
 df[['Discipline', 'Phase' ]] = df['Task'].str.split('-', expand=True)
 df['Discipline'] = df['Discipline'].str.rstrip()
 df = df.fillna("NA")
-
 df['Date'] = pd.to_datetime(df['Date']).dt.date
 today_in_sheet = df['Date'].max()
-totalhoursAD = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-002")])["Quantity Reg."].sum()
+
+totalhoursAD = df.groupby([(df["Project No."] == "15195-002") , (df["Transaction Type"] == "Time")])["Quantity Reg."].sum()
 totalcostAD = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-002")])["Cost, Reg."].sum()
-totalhoursPAK = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-008")])["Quantity Reg."].sum()
+totalhoursPAK = df.groupby([(df["Transaction Type"] == "Time") , (df["Project No."] == "15195-008")])["Quantity Reg."].sum()
 totalCostPAK = df.groupby([(df["Transaction Type"] == "Time"), (df["Project No."] == "15195-008")])["Cost, Reg."].sum()
 total_to_invoice = df2["Amount, Currency"].sum()
 total_invoiced = df2[df2["Transferred"] == True]["Amount, Currency"].sum()
-
-time_cum = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().cumsum().reset_index()
+time_cum_filter_time = df[df["Transaction Type"]=="Time"]
+time_cum = time_cum_filter_time.groupby(['Date', 'Discipline', "Project No.", "Transaction Type"])[['Quantity Reg.']].sum().cumsum().reset_index()
+st.write(time_cum["Quantity Reg."].max())
 time_cum1 = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().reset_index()
 # st.write(time_cum)
 # st.write(time_cum1)
@@ -59,7 +65,7 @@ menumain = option_menu("", ["Time & Cost", 'Document', "Invoices"], default_inde
 if menumain == "Time & Cost":
     timecheckbox = st.checkbox("Show detailed analysis")
     if not timecheckbox:
-        exchangeratePKR = st.number_input("1 USD = xxx PKR", value=285.08)
+        exchangeratePKR = st.number_input("1 USD = xxx PKR", value=285.08,step=0.5)
 
         col100, col200, col300 = st.columns(3, gap="large")
         with col100:
@@ -123,16 +129,16 @@ if menumain == "Time & Cost":
             fig = make_subplots(specs=[[{"secondary_y": True}]],)
             # Add traces
             fig.add_trace(
-                go.Scatter(x=time_cum["Date"], y=time_cum['Quantity Reg.'], name="Cumulative project hours", ),
+                go.Scatter(x=time_cum["Date"], y=time_cum['Quantity Reg.'], name="Cumulative project hours" ),
                 secondary_y=False, )
 
             fig.add_trace(
-                go.Histogram(x=df["Date"], y=df["Quantity Reg."], name="Daily Hours spent", ), secondary_y=True, )
+                go.Histogram(x=time_cum["Date"], y=time_cum["Quantity Reg."], name="Daily Hours spent", ), secondary_y=True, )
 
             fig.update_traces(marker_color='blue', marker_line_color='red',
                               marker_line_width=1, opacity=0.5)
             # Add figure title
-            fig.update_layout(title_text=f"Total Project Hours till {today_in_sheet} is {df['Quantity Reg.'].sum()}")
+            fig.update_layout(title_text=f"Total Project Hours till {today_in_sheet} is {time_cum_filter_time['Quantity Reg.'].sum()}")
 
             # Set x-axis title
             fig.update_xaxes(title_text="Date")
@@ -258,6 +264,7 @@ lst_pie_names = ["invoiced", "to_invoice"]
 lst_pie_values = [total_invoiced, total_to_invoice-total_invoiced]
 invoice_cum = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().cumsum().reset_index()
 invoice_cum1 = df2.groupby(['Planned Date', 'Transferred'])[['Amount, Invoice Currency']].sum().reset_index()
+invoice_cum1.rename(columns = {'Amount, Invoice Currency':'Amount'}, inplace = True)
 # invoice_cum1['Planned Date'] = pd.to_datetime(invoice_cum1['Planned Date'])
 invoice_cum1["Planned Date"] = invoice_cum1["Planned Date"].dt.date
 
@@ -273,25 +280,26 @@ if menumain == "Invoices":
     col1, col2 = st.columns(2, gap='small')
     with col1:
 
-        invoices_pie = px.pie(data_frame=df2, values="Amount, Currency", names="Transferred", hole=0.5,
-                              color_discrete_sequence = ['#2C3E50','#CACFD2'])
+        invoices_pie = px.pie(data_frame=df2, values="Amount, Invoice Currency", names="Transferred", hole=0.5,
+                              color_discrete_sequence = ['#ff5c5c','lightgreen'])
         invoices_pie.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="center", x=0))
         invoices_pie.update_traces(textinfo='percent+value', title_text="Invoices Submitted", title_font_size= 17)
         st.plotly_chart(invoices_pie)
         st.dataframe(round(invoice_cum1, 2).style.apply(highlight_pending, axis=1)
-                     .format({'Amount, Invoice Currency': '{:,.2f}'}))
+                     .format({'Amount': '{:,.2f}'}))
         # st.dataframe(invoice_cum1.style.applymap(color_pending, subset=['Transferred']))
     with col2:
 
         fig = px.line(invoice_cum, x="Planned Date", y='Amount, Invoice Currency', color="Transferred",
-                      color_discrete_sequence = ['#00c100','#ff5c5c'])
+                      color_discrete_sequence = ['#00c100',' #ded8d8 '])
         fig.update_traces(mode='markers+lines+text')
         fig.update_layout(yaxis=dict(title='Invoiced ($)', titlefont_size=16, tickfont_size=14),
                           xaxis=dict(title='Planned Date', titlefont_size=16, tickfont_size=14))
         fig.add_bar(alignmentgroup="Planned Date",x=invoice_cum1["Planned Date"],
-                    y=invoice_cum1["Amount, Invoice Currency"], name="Invoices",opacity=0.75)
+                    y=invoice_cum1["Amount"], name="Invoices",opacity=0.75)
         fig.update_layout(legend_title_text=None, legend=dict(orientation="v", yanchor="top", y=0.9, xanchor="center", x=0.9))
         st.plotly_chart(fig)
+
 
 
 
