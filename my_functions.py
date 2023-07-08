@@ -1,4 +1,4 @@
-#import plotly.express as px
+import plotly.express as px
 import streamlit as st
 import pandas as pd
 from contextlib import contextmanager
@@ -40,12 +40,12 @@ def UC_slide(dataframe, xaxis, yaxis, measure, barmode):
     # return figname
 
 #   Function to generate pie chart
-def create_pie(dataframe, values, names, title_text):
+def create_pie(dataframe, values, names, title_text, **kwargs):
     pie_name = px.pie(dataframe, values=values, names=names)
     pie_name.update_layout(legend=dict(orientation="v", yanchor="top", y=1, xanchor="right", x=0.1))
     pie_name.update_layout(uniformtext_minsize=20, uniformtext_mode='hide')
-    pie_name.update_traces(dict(title_text=title_text,title_position = "top center",
-                                      title_font_size= 30))
+    pie_name.update_traces(dict(title_text=title_text,title_position = "bottom center",
+                                      title_font_size= 20))
     pie_name.update_traces(legendgrouptitle_font_size=5)
 
     return pie_name
