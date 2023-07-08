@@ -22,7 +22,6 @@ file = "expenses.xls"
 df = pd.read_excel(file)
 # df = my_functions.get_data_from_excel("expenses.xls")
 # df.dropna(how='all', axis=1, inplace=True)
-st.write(df.shape)
 
 # df1 = my_functions.get_data_from_excel("doc_status.xlsx")
 # df1.dropna(how='all', axis=1, inplace=True)
@@ -48,7 +47,6 @@ total_to_invoice = df2["Amount, Currency"].sum()
 total_invoiced = df2[df2["Transferred"] == True]["Amount, Currency"].sum()
 time_cum_filter_time = df[df["Transaction Type"]=="Time"]
 time_cum = time_cum_filter_time.groupby(['Date', 'Discipline', "Project No.", "Transaction Type"])[['Quantity Reg.']].sum().cumsum().reset_index()
-st.write(time_cum["Quantity Reg."].max())
 time_cum1 = df.groupby(['Date', 'Discipline', "Project No."])[['Quantity Reg.']].sum().reset_index()
 # st.write(time_cum)
 # st.write(time_cum1)
